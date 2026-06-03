@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8">
@@ -465,11 +465,11 @@
     
     <div class="overlay" id="motivationOverlay">
       <div class="modal" style="text-align:center">
-        <h2 id="motivationTitle">????</h2>
+        <h2 id="motivationTitle">记录初始</h2>
         <div id="motivationBody" style="padding:8px 0 14px;line-height:2"></div>
         <div style="display:flex;gap:10px">
-          <button class="primary" id="motivationConfirm" type="button" style="flex:1">????</button>
-          <button class="ghost" id="motivationCancel" type="button" style="flex:1">??</button>
+          <button class="primary" id="motivationConfirm" type="button" style="flex:1">知道了</button>
+          <button class="ghost" id="motivationCancel" type="button" style="flex:1">跳过</button>
         </div>
       </div>
     </div>
@@ -790,12 +790,15 @@
         renderUser(user);
       }
 
-            function renderUser(user) {
+                        function renderUser(user) {
         const bmr = calcBMR(user);
         const tdee = calcTDEE(bmr, user.hours || 0);
         setDay(currentDay, false);
-        const goalText = { recomp: "保肌减脂", cut: "减脂为主", bulk: "增肌为主" }[user.goal || user.goals] || "保肌减脂";
-        els.userSummary.textContent = `${user.weight}kg / ${user.height}cm / ${user.age}岁 · ${goalText} · 周${user.hours}h · 基代${bmr} · 维持${tdee}kcal`;
+        const goalText = { recomp: "\u4FDD\u808C\u51CF\u8102", cut: "\u51CF\u8102\u4E3A\u4E3B", bulk: "\u589E\u808C\u4E3A\u4E3B" }[user.goal || user.goals] || "\u4FDD\u808C\u51CF\u8102";
+        const tw = user.targetWeight || 70;
+        const diff = user.weight - tw;
+        const diffText = diff > 0 ? '\u8FD8\u5DEE ' + diff.toFixed(1) + 'kg' : '\u5DF2\u8FBE\u6807 \uD83C\uDF89';
+        els.userSummary.textContent = user.weight + 'kg / ' + user.height + 'cm / ' + user.age + '\u5C81 \u00B7 ' + goalText + ' \u00B7 \u76EE\u6807' + tw + 'kg \u00B7 ' + diffText + ' \u00B7 \u5468' + user.hours + 'h \u00B7 \u57FA\u4EE3' + bmr + ' \u00B7 \u7EF4\u6301' + tdee + 'kcal';
       }
 
       function loadDateState() {
@@ -965,31 +968,31 @@
         let title = "";
 
         if (diff === null) {
-          body = `???? <strong>${data.w}kg</strong>??????? ??`;
-          title = "?? ????";
+          body = `这是你的初始体重 <strong>${data.w}kg</strong>，接下来一起努力吧！`;
+          title = "记录初始";
         } else if (diff < 0) {
-          title = "?? ????";
-          body = `???? <strong>${Math.abs(diff).toFixed(2)}kg ?</strong>`;
+          title = "减得漂亮";
+          body = `比上次轻了 <strong>${Math.abs(diff).toFixed(2)}kg 💪</strong>`;
           if (toGo > 0) {
-            body += `<br>??? <strong>${tw}kg</strong> ?? <strong>${toGo}kg</strong><br>????????????????`;
+            body += `<br>距离目标 <strong>${tw}kg</strong> 还有 <strong>${toGo}kg</strong><br>继续保持这个节奏，脂肪正在远离你！`;
           } else {
-            body += `<br>??????????????`;
+            body += `<br>你已经达到目标体重了！太棒了！`;
           }
         } else {
           if (isAlcohol) {
-            title = "?? ???";
-            body = `???? <strong>+${Math.abs(diff).toFixed(2)}kg ?</strong>`;
+            title = "别太在意";
+            body = `比上次重了 <strong>+${Math.abs(diff).toFixed(2)}kg 📈</strong>`;
             if (toGo > 0) {
-              body += `<br>??? <strong>${tw}kg</strong> ?? <strong>${toGo}kg</strong>`;
+              body += `<br>距离目标 <strong>${tw}kg</strong> 还有 <strong>${toGo}kg</strong>`;
             }
-            body += `<br>???????????????????? ??`;
+            body += `<br>喝酒后体重虚涨是正常的，注意补水清淡饮食就好！`;
           } else {
-            title = "?? ???";
-            body = `???? <strong>+${Math.abs(diff).toFixed(2)}kg ?</strong>`;
+            title = "略有波动";
+            body = `比上次重了 <strong>+${Math.abs(diff).toFixed(2)}kg 📈</strong>`;
             if (toGo > 0) {
-              body += `<br>??? <strong>${tw}kg</strong> ?? <strong>${toGo}kg</strong>`;
+              body += `<br>距离目标 <strong>${tw}kg</strong> 还有 <strong>${toGo}kg</strong>`;
             }
-            body += `<br>????????????????? ??`;
+            body += `<br>单次波动不用紧张，看长期趋势才准！`;
           }
         }
 
