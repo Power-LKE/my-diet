@@ -462,6 +462,16 @@
           <button class="primary" type="submit">保存</button>
         </form>
       </div>
+    
+    <div class="overlay" id="motivationOverlay">
+      <div class="modal" style="text-align:center">
+        <h2 id="motivationTitle">????</h2>
+        <div id="motivationBody" style="padding:8px 0 14px;line-height:2"></div>
+        <div style="display:flex;gap:10px">
+          <button class="primary" id="motivationConfirm" type="button" style="flex:1">????</button>
+          <button class="ghost" id="motivationCancel" type="button" style="flex:1">??</button>
+        </div>
+      </div>
     </div>
 
     <main class="app">
@@ -719,7 +729,17 @@
         els.datePicker.value = todayValue();
         els.todayBtn.addEventListener("click", () => {
           els.datePicker.value = todayValue();
-          loadDateState();
+          
+        document.getElementById("motivationConfirm").addEventListener("click", () => {
+          document.getElementById("motivationOverlay").classList.remove("show");
+          commitDietSave();
+        });
+        document.getElementById("motivationCancel").addEventListener("click", () => {
+          document.getElementById("motivationOverlay").classList.remove("show");
+          pendingDietSave = null;
+        });
+
+        loadDateState();
         });
         els.datePicker.addEventListener("change", loadDateState);
         els.setupBtn.addEventListener("click", showSetup);
@@ -749,6 +769,7 @@
         document.getElementById("userAge").value = user.age || 24;
         document.getElementById("userGender").value = user.gender || "male";
         document.getElementById("userHours").value = user.hours || 9;
+        document.getElementById("userTargetWeight").value = user.targetWeight || 70;
         document.getElementById("userGoal").value = user.goal || user.goals || "recomp";
         els.setupOverlay.classList.add("show");
       }
@@ -761,7 +782,8 @@
           age: Number(document.getElementById("userAge").value),
           gender: document.getElementById("userGender").value,
           hours: Number(document.getElementById("userHours").value),
-          goal: document.getElementById("userGoal").value
+          goal: document.getElementById("userGoal").value,
+          targetWeight: Number(document.getElementById("userTargetWeight").value) || 70
         };
         storage.set("my_user", user);
         els.setupOverlay.classList.remove("show");
@@ -894,24 +916,86 @@
         `;
       }
 
+            let pendingDietSave = null;
+
       function saveDiet(event) {
         event.preventDefault();
-        const logs = storage.get("my_lg", []);
         const date = keyDate();
-        const next = {
+        const weight = Number(document.getElementById("dietWeight").value) || 0;
+        pendingDietSave = {
           date,
           c: Number(document.getElementById("dietCarb").value) || 0,
           p: Number(document.getElementById("dietProtein").value) || 0,
           f: Number(document.getElementById("dietFat").value) || 0,
-          w: Number(document.getElementById("dietWeight").value) || 0
+          w: weight
         };
-        const index = logs.findIndex(log => log.date === date);
-        if (index >= 0) logs[index] = next;
-        else logs.push(next);
+        if (weight > 0) {
+          showWeightMotivation(pendingDietSave);
+        } else {
+          commitDietSave();
+        }
+      }
+
+      function commitDietSave() {
+        if (!pendingDietSave) return;
+        const logs = storage.get("my_lg", []);
+        const idx = logs.findIndex(l => l.date === pendingDietSave.date);
+        if (idx >= 0) logs[idx] = pendingDietSave;
+        else logs.push(pendingDietSave);
         storage.set("my_lg", logs);
-        showDietStatus(next);
+        showDietStatus(pendingDietSave);
         analyzeWeightTrend();
         drawWeightChart();
+        pendingDietSave = null;
+      }
+
+      function showWeightMotivation(data) {
+        const el = document.getElementById("motivationOverlay");
+        const logs = storage.get("my_lg", []).filter(l => Number(l.w) > 0).sort((a, b) => a.date.localeCompare(b.date));
+        const todayStr = data.date;
+        const prevLog = logs.filter(l => l.date < todayStr).pop();
+        const prevW = prevLog ? prevLog.w : null;
+        const user = storage.get("my_user");
+        const tw = user?.targetWeight || 70;
+        const diff = prevW !== null ? (data.w - prevW) : null;
+        const toGo = (tw - data.w).toFixed(1);
+        const isAlcohol = currentDay === "alcohol";
+
+        let body = "";
+        let title = "";
+
+        if (diff === null) {
+          body = `???? <strong>${data.w}kg</strong>??????? ??`;
+          title = "?? ????";
+        } else if (diff < 0) {
+          title = "?? ????";
+          body = `???? <strong>${Math.abs(diff).toFixed(2)}kg ?</strong>`;
+          if (toGo > 0) {
+            body += `<br>??? <strong>${tw}kg</strong> ?? <strong>${toGo}kg</strong><br>????????????????`;
+          } else {
+            body += `<br>??????????????`;
+          }
+        } else {
+          if (isAlcohol) {
+            title = "?? ???";
+            body = `???? <strong>+${Math.abs(diff).toFixed(2)}kg ?</strong>`;
+            if (toGo > 0) {
+              body += `<br>??? <strong>${tw}kg</strong> ?? <strong>${toGo}kg</strong>`;
+            }
+            body += `<br>???????????????????? ??`;
+          } else {
+            title = "?? ???";
+            body = `???? <strong>+${Math.abs(diff).toFixed(2)}kg ?</strong>`;
+            if (toGo > 0) {
+              body += `<br>??? <strong>${tw}kg</strong> ?? <strong>${toGo}kg</strong>`;
+            }
+            body += `<br>????????????????? ??`;
+          }
+        }
+
+        document.getElementById("motivationTitle").textContent = title;
+        document.getElementById("motivationBody").innerHTML = body;
+        el.classList.add("show");
       }
 
       function loadDiet() {
