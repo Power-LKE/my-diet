@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8">
@@ -498,11 +498,29 @@
         }
       };
 
-      const targets = {
-        train: { label: "训练日", c: 230, p: 140, f: 70 },
-        rest: { label: "休息日", c: 200, p: 140, f: 77 },
-        alcohol: { label: "喝酒日", c: 170, p: 125, f: 62 }
-      };
+            // 动态计算碳蛋脂目标，基于用户个人信息（视频公式）
+      function calcMacroRatio(user) {
+        const h = Math.min((user.hours || 0) / 12, 1);
+        if (user.gender === 'female') {
+          return { c: 2.0 + h * 1.2, p: 1.3 + h * 0.4, f: 1.1 - h * 0.3 };
+        }
+        return { c: 2.2 + h * 1.3, p: 1.4 + h * 0.4, f: 1.2 - h * 0.4 };
+      }
+
+      function calcDayTargets(user, dayType) {
+        if (!user || !user.weight) return { label: '训练日', c: 0, p: 0, f: 0 };
+        const r = calcMacroRatio(user);
+        const w = user.weight;
+        const goal = user.goal === 'cut' ? 0.88 : user.goal === 'bulk' ? 1.05 : 0.95;
+        const adj = { train: { c: 1, p: 1, f: 1 }, rest: { c: 0.85, p: 0.95, f: 1.1 }, alcohol: { c: 0.72, p: 0.85, f: 0.9 } };
+        const d = adj[dayType] || adj.train;
+        return {
+          label: { train: '训练日', rest: '休息日', alcohol: '喝酒日' }[dayType] || '训练日',
+          c: Math.round(w * r.c * d.c * goal),
+          p: Math.round(w * r.p * d.p),
+          f: Math.round(w * r.f * d.f)
+        };
+      }
 
       const mealPlans = {
         train: [
@@ -594,6 +612,19 @@
         return t.c * 4 + t.p * 4 + t.f * 9;
       }
 
+      function calcBMR(user) {
+        if (!user || !user.weight || !user.height || !user.age) return 0;
+        const b = user.gender === 'female'
+          ? 10 * user.weight + 6.25 * user.height - 5 * user.age - 161
+          : 10 * user.weight + 6.25 * user.height - 5 * user.age + 5;
+        return Math.round(b);
+      }
+
+      function calcTDEE(bmr, hours) {
+        const f = hours <= 2 ? 1.2 : hours <= 5 ? 1.375 : hours <= 8 ? 1.55 : hours <= 12 ? 1.725 : 1.9;
+        return Math.round(bmr * f);
+      }
+
       function init() {
         els.datePicker.value = todayValue();
         els.todayBtn.addEventListener("click", () => {
@@ -647,9 +678,12 @@
         renderUser(user);
       }
 
-      function renderUser(user) {
+            function renderUser(user) {
+        const bmr = calcBMR(user);
+        const tdee = calcTDEE(bmr, user.hours || 0);
+        setDay(currentDay, false);
         const goalText = { recomp: "保肌减脂", cut: "减脂为主", bulk: "增肌为主" }[user.goal || user.goals] || "保肌减脂";
-        els.userSummary.textContent = `${user.weight}kg / ${user.height}cm / ${user.age}岁 · ${goalText} · 每周运动 ${user.hours} 小时`;
+        els.userSummary.textContent = `${user.weight}kg / ${user.height}cm / ${user.age}岁 · ${goalText} · 周${user.hours}h · 基代${bmr} · 维持${tdee}kcal`;
       }
 
       function loadDateState() {
@@ -664,7 +698,8 @@
       function setDay(day, save) {
         currentDay = day;
         document.querySelectorAll("[data-day]").forEach(btn => btn.classList.toggle("active", btn.dataset.day === day));
-        const target = targets[day];
+        const user = storage.get("my_user");
+        const target = user ? calcDayTargets(user, day) : { label: { train: "训练日", rest: "休息日", alcohol: "喝酒日" }[day] || "训练日", c: 0, p: 0, f: 0 };
         els.dayBadge.textContent = target.label;
         document.getElementById("targetCarb").textContent = target.c;
         document.getElementById("targetProtein").textContent = target.p;
@@ -906,7 +941,8 @@
 
       init();
           function suggestFood(log) {
-        const target = targets[currentDay] || targets.train;
+        const user = storage.get("my_user");
+        const target = user ? calcDayTargets(user, currentDay) : null;
         if (!target) return;
         const gap = { c: target.c - log.c, p: target.p - log.p, f: target.f - log.f };
         const el = document.getElementById("dietSuggestion");
@@ -957,5 +993,4 @@
       }
 </script>
   </body>
-<!-- gh-pages deploy -->
 </html>
