@@ -790,13 +790,12 @@
 
                         function renderUser(user) {
         const bmr = calcBMR(user);
-        const tdee = calcTDEE(bmr, user.hours || 0);
         setDay(currentDay, false);
         const goalText = { recomp: "\u4FDD\u808C\u51CF\u8102", cut: "\u51CF\u8102\u4E3A\u4E3B", bulk: "\u589E\u808C\u4E3A\u4E3B" }[user.goal || user.goals] || "\u4FDD\u808C\u51CF\u8102";
         const tw = user.targetWeight || 70;
         const diff = user.weight - tw;
         const diffText = diff > 0 ? '\u8FD8\u5DEE ' + diff.toFixed(1) + 'kg' : '\u5DF2\u8FBE\u6807 \uD83C\uDF89';
-        els.userSummary.textContent = user.weight + 'kg / ' + user.height + 'cm / ' + user.age + '\u5C81 \u00B7 ' + goalText + ' \u00B7 \u76EE\u6807' + tw + 'kg \u00B7 ' + diffText + ' \u00B7 \u5468' + user.hours + 'h \u00B7 \u57FA\u4EE3' + bmr + ' \u00B7 \u7EF4\u6301' + tdee + 'kcal';
+        els.userSummary.textContent = user.weight + 'kg / ' + user.height + 'cm / ' + user.age + '\u5C81 \u00B7 ' + goalText + ' \u00B7 \u76EE\u6807' + tw + 'kg \u00B7 ' + diffText + ' \u00B7 \u5468' + user.hours + 'h \u00B7 \u57FA\u4EE3' + bmr;
       }
 
       function loadDateState() {
