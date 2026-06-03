@@ -1,0 +1,960 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>身体重组饮食助手</title>
+    <link rel="icon" href="diet-icon.ico">
+    <style>
+      :root {
+        --bg: #f4f6f5;
+        --card: #ffffff;
+        --text: #1a2b26;
+        --muted: #6a7d76;
+        --line: #dce4df;
+        --green: #256b5c;
+        --green-soft: #e4f0eb;
+        --orange: #c16b4f;
+        --blue: #4f7bc1;
+        --gold: #b8942e;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Microsoft YaHei", Arial, sans-serif;
+      }
+
+      button, input, select, textarea { font: inherit; }
+      button { cursor: pointer; }
+      .app {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 22px 18px 34px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 21px;
+      }
+      .sub {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .badge {
+        border: 1px solid var(--line);
+        background: var(--card);
+        border-radius: 8px;
+        padding: 6px 10px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .ghost {
+        border: 0;
+        border-radius: 8px;
+        background: #e8efeb;
+        color: var(--text);
+        padding: 7px 10px;
+        font-weight: 700;
+      }
+
+      .date-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+      .date-row input {
+        max-width: 170px;
+      }
+      .date-label {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .targets {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .target {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 13px 11px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+      }
+      .target span {
+        display: block;
+        font-size: 22px;
+        font-weight: 800;
+      }
+      .target small {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .carb { color: var(--gold); }
+      .protein { color: var(--orange); }
+      .fat { color: var(--blue); }
+      .kcal { color: var(--green); }
+
+      .day-buttons, .train-buttons {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+      .day-buttons {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .train-buttons {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+      .pick {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--card);
+        padding: 12px 10px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .pick:hover,
+      .pick.active {
+        border-color: var(--green);
+        background: var(--green-soft);
+      }
+
+      .meal-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .meal {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 13px 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+      }
+      .meal strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+      .meal span {
+        display: inline-block;
+        margin-right: 8px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 17px;
+        margin-bottom: 18px;
+      }
+      .panel h2 {
+        margin: 0 0 10px;
+        font-size: 15px;
+      }
+      .note {
+        border-radius: 8px;
+        padding: 10px 12px;
+        background: #eef4f1;
+        color: var(--green);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+      .warn {
+        background: #fdf0e6;
+        color: var(--orange);
+      }
+
+      .exercise-groups {
+        display: grid;
+        gap: 13px;
+      }
+      .exercise-group strong {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .exercise-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-top: 6px;
+        padding: 9px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfcfb;
+        font-size: 12px;
+      }
+      .exercise-item.done {
+        background: var(--green-soft);
+      }
+      .check {
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--green);
+        border-radius: 4px;
+        display: grid;
+        place-items: center;
+        color: white;
+        background: white;
+        font-size: 10px;
+        flex: 0 0 auto;
+      }
+      .done .check {
+        background: var(--green);
+      }
+      .exercise-item em {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 11px;
+        font-style: normal;
+      }
+
+      form {
+        display: grid;
+        gap: 11px;
+      }
+      .row2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      label {
+        display: grid;
+        gap: 4px;
+        color: #31423d;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      input, select, textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfcfb;
+        padding: 8px 10px;
+        color: var(--text);
+      }
+      textarea { resize: vertical; }
+      .primary {
+        border: 0;
+        border-radius: 8px;
+        background: var(--green);
+        color: white;
+        padding: 10px;
+        font-weight: 800;
+      }
+
+      #weightChart {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+      }
+
+      .status {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .task-summary {
+        display: grid;
+        gap: 10px;
+      }
+      .task-empty {
+        padding: 12px;
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        color: var(--muted);
+        background: #fbfcfb;
+        font-size: 12px;
+        line-height: 1.7;
+      }
+      .task-chip-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .task-chip {
+        border-radius: 999px;
+        background: var(--green-soft);
+        color: var(--green);
+        padding: 7px 10px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .task-meta {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 14px;
+        background: rgba(0, 0, 0, .48);
+      }
+      .overlay.show { display: flex; }
+      .modal {
+        width: min(460px, 100%);
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+      }
+      .modal h2 {
+        margin: 0 0 6px;
+        font-size: 18px;
+      }
+      .modal p {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      @media (max-width: 560px) {
+        .targets,
+        .day-buttons,
+        .meal-grid,
+        .row2 {
+          grid-template-columns: 1fr 1fr;
+        }
+        .train-buttons {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+    #dietSuggestion{padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.6;margin-top:8px;background:#f0f7f3;border:1px solid #c8e0d2}
+    </style>
+  </head>
+  <body>
+    <div class="overlay" id="setupOverlay">
+      <div class="modal">
+        <h2>设置个人信息</h2>
+        <p>用于估算每日饮食目标，可随时点击右上角按钮修改。</p>
+        <form id="setupForm">
+          <div class="row2">
+            <label>体重（kg）<input id="userWeight" type="number" step="0.1" required></label>
+            <label>身高（cm）<input id="userHeight" type="number" required></label>
+          </div>
+          <div class="row2">
+            <label>年龄<input id="userAge" type="number" required></label>
+            <label>性别<select id="userGender"><option value="male">男</option><option value="female">女</option></select></label>
+          </div>
+          <div class="row2">
+            <label>每周运动（小时）<input id="userHours" type="number" step="0.5" required></label>
+            <label>目标<select id="userGoal"><option value="recomp">保肌减脂</option><option value="cut">减脂为主</option><option value="bulk">增肌为主</option></select></label>
+          </div>
+          <button class="primary" type="submit">保存</button>
+        </form>
+      </div>
+    </div>
+
+    <main class="app">
+      <header class="header">
+        <div>
+          <h1>身体重组饮食助手</h1>
+          <div class="sub" id="userSummary">未设置个人信息</div>
+        </div>
+        <div style="display:flex;gap:7px;align-items:center">
+          <div class="badge" id="dayBadge">请选择日期类型</div>
+          <button class="ghost" id="setupBtn" type="button">设置</button>
+        </div>
+      </header>
+
+      <section class="date-row">
+        <span>📅</span>
+        <input id="datePicker" type="date">
+        <button class="ghost" id="todayBtn" type="button">今天</button>
+        <span class="date-label" id="dateLabel"></span>
+      </section>
+
+      <section class="targets">
+        <div class="target"><span class="carb" id="targetCarb">-</span><small>碳水 g</small></div>
+        <div class="target"><span class="protein" id="targetProtein">-</span><small>蛋白 g</small></div>
+        <div class="target"><span class="fat" id="targetFat">-</span><small>脂肪 g</small></div>
+        <div class="target"><span class="kcal" id="targetKcal">-</span><small>总热量 kcal</small></div>
+      </section>
+
+      <section class="day-buttons" id="dayButtons">
+        <button class="pick" data-day="train" type="button">🏋️ 训练日</button>
+        <button class="pick" data-day="rest" type="button">😴 休息日</button>
+        <button class="pick" data-day="alcohol" type="button">🍺 喝酒日</button>
+      </section>
+
+      <section id="mealCards" class="meal-grid"></section>
+
+      <section class="panel" id="trainingPanel">
+        <h2>训练动作记录</h2>
+        <div class="train-buttons" id="trainButtons">
+          <button class="pick" data-train="push" type="button">推</button>
+          <button class="pick" data-train="pull" type="button">拉</button>
+          <button class="pick" data-train="legs" type="button">腿</button>
+          <button class="pick" data-train="shoulder" type="button">肩</button>
+          <button class="pick" data-train="arms" type="button">手臂</button>
+          <button class="pick" data-train="abs" type="button">腹肌</button>
+        </div>
+        <div id="exerciseList" class="exercise-groups"></div>
+      </section>
+
+      <section class="panel" id="alcoholPanel" hidden>
+        <h2>饮酒恢复建议</h2>
+        <div class="note warn">喝酒日目标已下调脂肪与总热量。当天优先补水，第二天根据状态安排训练。</div>
+        <form id="alcoholForm" style="margin-top:10px">
+          <div class="row2">
+            <label>酒的种类
+              <select id="alcoholType">
+                <option value="baijiu">白酒 / 威士忌</option>
+                <option value="beer">啤酒</option>
+                <option value="wine">干红 / 干白</option>
+                <option value="cocktail">鸡尾酒 / 甜酒</option>
+                <option value="mix">混着喝</option>
+              </select>
+            </label>
+            <label>喝了多少
+              <select id="alcoholAmount">
+                <option value="light">少量（微醺）</option>
+                <option value="medium">中等（脸红兴奋）</option>
+                <option value="heavy">大量（上头了）</option>
+                <option value="tooMuch">喝多了（很难受）</option>
+              </select>
+            </label>
+          </div>
+          <label>配酒吃了什么<textarea id="alcoholFood" rows="2" placeholder="例如烧烤、火锅、炸鸡"></textarea></label>
+          <button class="primary" type="submit">生成恢复建议</button>
+        </form>
+        <div id="alcoholAdvice" class="status">填写后会显示恢复建议。</div>
+      </section>
+
+      <section class="panel">
+        <h2>饮食与体重记录</h2>
+        <form id="dietForm">
+          <div class="row2">
+            <label>实际碳水（g）<input id="dietCarb" type="number" min="0"></label>
+            <label>实际蛋白（g）<input id="dietProtein" type="number" min="0"></label>
+          </div>
+          <div class="row2">
+            <label>实际脂肪（g）<input id="dietFat" type="number" min="0"></label>
+            <label>当天体重（kg）<input id="dietWeight" type="number" min="20" step="0.05"></label>
+          </div>
+          <button class="primary" type="submit">保存当天记录</button>
+        </form>
+        <div class="status" id="dietStatus">选择日期后记录。</div>
+      <div id="dietSuggestion"></div>
+      </section>
+
+      <section class="panel">
+        <h2>今日训练完成</h2>
+        <div id="taskSummary" class="task-summary"></div>
+      </section>
+
+      <section class="panel">
+        <h2>体重趋势</h2>
+        <canvas id="weightChart" width="680" height="240"></canvas>
+      </section>
+    </main>
+
+    <script>
+      const storage = {
+        get(key, fallback = null) {
+          try {
+            const value = localStorage.getItem(key);
+            return value === null ? fallback : JSON.parse(value);
+          } catch {
+            return fallback;
+          }
+        },
+        set(key, value) {
+          localStorage.setItem(key, JSON.stringify(value));
+        }
+      };
+
+      const targets = {
+        train: { label: "训练日", c: 230, p: 140, f: 70 },
+        rest: { label: "休息日", c: 200, p: 140, f: 77 },
+        alcohol: { label: "喝酒日", c: 170, p: 125, f: 62 }
+      };
+
+      const mealPlans = {
+        train: [
+          ["早餐", 65, 35, 20, "70g 燕麦 + 3 个全蛋 + 15g 南瓜籽"],
+          ["练前", 80, 35, 15, "约 100g 生米 + 120g 鸡胸肉"],
+          ["练后", 70, 45, 20, "180g 瘦肉 + 150g 红薯 + 10g 油"],
+          ["睡前", 15, 25, 15, "200ml 低脂酸奶 + 15g 混合坚果"]
+        ],
+        rest: [
+          ["早餐", 65, 35, 20, "70g 燕麦 + 3 个全蛋 + 10g 南瓜籽"],
+          ["午餐", 60, 45, 20, "80g 生米 + 150g 瘦肉 + 10g 油"],
+          ["晚餐", 55, 35, 22, "250g 红薯 + 150g 牛肉 + 12g 油"],
+          ["睡前", 20, 25, 15, "200ml 酸奶 + 20g 混合坚果"]
+        ],
+        alcohol: [
+          ["早餐", 60, 35, 18, "70g 燕麦 + 2 个全蛋 + 1 个蛋白，白天吃稳"],
+          ["午餐", 55, 40, 15, "80g 生米 + 150g 瘦肉 + 少油"],
+          ["晚餐", 40, 30, 15, "喝前吃：150g 红薯 + 120g 瘦肉，少油少糖"],
+          ["睡前", 15, 20, 14, "1L 水 + 电解质 + 低脂酸奶，别吃宵夜"]
+        ]
+      };
+
+      const exercises = {
+        push: {
+          胸: [["杠铃卧推", "整体"], ["哑铃卧推", "更多活动度"], ["上斜卧推", "上胸"], ["哑铃飞鸟", "拉伸"], ["绳索夹胸", "收缩"], ["双杠臂屈伸", "下胸 + 三头"]],
+          肩: [["杠铃推举", "整体"], ["侧平举", "中束"], ["前平举", "前束"], ["阿诺德推举", "前中束"]],
+          三头: [["窄距卧推", "整体"], ["绳索下压", "外侧头"], ["三头臂屈伸", "长头"]]
+        },
+        pull: {
+          背: [["引体向上", "宽度"], ["杠铃划船", "厚度"], ["哑铃划船", "单侧"], ["高位下拉", "背阔"], ["坐姿划船", "中背"], ["硬拉", "后链"], ["面拉", "后束"]],
+          二头: [["杠铃弯举", "整体"], ["锤式弯举", "肱肌"], ["集中弯举", "峰值"]]
+        },
+        legs: {
+          股四: [["杠铃深蹲", "股四 + 臀"], ["腿举", "集中"], ["腿屈伸", "孤立"], ["保加利亚分腿蹲", "稳定"], ["箭步蹲", "功能"]],
+          腘绳: [["罗马尼亚硬拉", "腘绳 + 臀"], ["腿弯举", "孤立"], ["臀推", "臀大肌"]],
+          小腿: [["站姿提踵", "腓肠肌"], ["坐姿提踵", "比目鱼肌"]]
+        },
+        shoulder: {
+          肩: [["坐姿推举", "整体"], ["侧平举", "宽度"], ["俯身飞鸟", "后束"], ["面拉", "肩袖"], ["阿诺德推举", "旋转"], ["古巴推举", "热身"]]
+        },
+        arms: {
+          二头: [["杠铃弯举", "整体"], ["锤式弯举", "肱肌"], ["集中弯举", "峰值"]],
+          三头: [["绳索下压", "外侧头"], ["窄距卧推", "整体"], ["法式弯举", "长头"]],
+          前臂: [["手腕弯举", "屈肌"], ["农夫行走", "握力"]]
+        },
+        abs: {
+          腹肌: [["卷腹", "上腹"], ["悬垂举腿", "下腹"], ["平板支撑", "核心"], ["俄罗斯转体", "腹斜"], ["真空腹", "深层"]]
+        }
+      };
+
+      let currentDay = "train";
+      let currentTrain = "push";
+
+      const els = {
+        setupOverlay: document.getElementById("setupOverlay"),
+        setupForm: document.getElementById("setupForm"),
+        setupBtn: document.getElementById("setupBtn"),
+        userSummary: document.getElementById("userSummary"),
+        datePicker: document.getElementById("datePicker"),
+        todayBtn: document.getElementById("todayBtn"),
+        dateLabel: document.getElementById("dateLabel"),
+        dayBadge: document.getElementById("dayBadge"),
+        mealCards: document.getElementById("mealCards"),
+        trainingPanel: document.getElementById("trainingPanel"),
+        alcoholPanel: document.getElementById("alcoholPanel"),
+        exerciseList: document.getElementById("exerciseList"),
+        taskSummary: document.getElementById("taskSummary"),
+        dietForm: document.getElementById("dietForm"),
+        dietStatus: document.getElementById("dietStatus"),
+        weightChart: document.getElementById("weightChart")
+      };
+
+      function todayValue() {
+        const parts = new Intl.DateTimeFormat("zh-CN", {
+          timeZone: "Asia/Shanghai",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).formatToParts(new Date());
+        const map = Object.fromEntries(parts.map(part => [part.type, part.value]));
+        return `${map.year}-${map.month}-${map.day}`;
+      }
+
+      function keyDate() {
+        return els.datePicker.value.replaceAll("-", "");
+      }
+
+      function kcal(t) {
+        return t.c * 4 + t.p * 4 + t.f * 9;
+      }
+
+      function init() {
+        els.datePicker.value = todayValue();
+        els.todayBtn.addEventListener("click", () => {
+          els.datePicker.value = todayValue();
+          loadDateState();
+        });
+        els.datePicker.addEventListener("change", loadDateState);
+        els.setupBtn.addEventListener("click", showSetup);
+        els.setupForm.addEventListener("submit", saveSetup);
+
+        document.querySelectorAll("[data-day]").forEach(btn => {
+          btn.addEventListener("click", () => setDay(btn.dataset.day, true));
+        });
+        document.querySelectorAll("[data-train]").forEach(btn => {
+          btn.addEventListener("click", () => setTrain(btn.dataset.train));
+        });
+
+        els.dietForm.addEventListener("submit", saveDiet);
+        document.getElementById("alcoholForm").addEventListener("submit", showAlcoholAdvice);
+
+        const user = storage.get("my_user");
+        if (!user) showSetup();
+        else renderUser(user);
+
+        loadDateState();
+      }
+
+      function showSetup() {
+        const user = storage.get("my_user", {});
+        document.getElementById("userWeight").value = user.weight || 77;
+        document.getElementById("userHeight").value = user.height || 173;
+        document.getElementById("userAge").value = user.age || 24;
+        document.getElementById("userGender").value = user.gender || "male";
+        document.getElementById("userHours").value = user.hours || 9;
+        document.getElementById("userGoal").value = user.goal || user.goals || "recomp";
+        els.setupOverlay.classList.add("show");
+      }
+
+      function saveSetup(event) {
+        event.preventDefault();
+        const user = {
+          weight: Number(document.getElementById("userWeight").value),
+          height: Number(document.getElementById("userHeight").value),
+          age: Number(document.getElementById("userAge").value),
+          gender: document.getElementById("userGender").value,
+          hours: Number(document.getElementById("userHours").value),
+          goal: document.getElementById("userGoal").value
+        };
+        storage.set("my_user", user);
+        els.setupOverlay.classList.remove("show");
+        renderUser(user);
+      }
+
+      function renderUser(user) {
+        const goalText = { recomp: "保肌减脂", cut: "减脂为主", bulk: "增肌为主" }[user.goal || user.goals] || "保肌减脂";
+        els.userSummary.textContent = `${user.weight}kg / ${user.height}cm / ${user.age}岁 · ${goalText} · 每周运动 ${user.hours} 小时`;
+      }
+
+      function loadDateState() {
+        const dayTypes = storage.get("my_dt", {});
+        setDay(dayTypes[keyDate()] || "train", false);
+        loadDiet();
+        renderTaskSummary();
+        drawWeightChart();
+        els.dateLabel.textContent = els.datePicker.value === todayValue() ? "今天" : els.datePicker.value;
+      }
+
+      function setDay(day, save) {
+        currentDay = day;
+        document.querySelectorAll("[data-day]").forEach(btn => btn.classList.toggle("active", btn.dataset.day === day));
+        const target = targets[day];
+        els.dayBadge.textContent = target.label;
+        document.getElementById("targetCarb").textContent = target.c;
+        document.getElementById("targetProtein").textContent = target.p;
+        document.getElementById("targetFat").textContent = target.f;
+        document.getElementById("targetKcal").textContent = kcal(target);
+        renderMeals(day);
+        els.trainingPanel.hidden = day !== "train";
+        els.alcoholPanel.hidden = day !== "alcohol";
+        if (day === "train") setTrain(currentTrain);
+        renderTaskSummary();
+        if (save) {
+          const dayTypes = storage.get("my_dt", {});
+          dayTypes[keyDate()] = day;
+          storage.set("my_dt", dayTypes);
+        }
+      }
+
+      function renderMeals(day) {
+        els.mealCards.innerHTML = mealPlans[day].map(meal => `
+          <article class="meal">
+            <strong>${meal[0]}</strong>
+            <span class="carb">${meal[1]}C</span>
+            <span class="protein">${meal[2]}P</span>
+            <span class="fat">${meal[3]}F</span>
+            <div class="status">${meal[4]}</div>
+          </article>
+        `).join("");
+      }
+
+      function setTrain(train) {
+        currentTrain = train;
+        document.querySelectorAll("[data-train]").forEach(btn => btn.classList.toggle("active", btn.dataset.train === train));
+        const saved = storage.get("my_ex", {});
+        const done = saved[keyDate()]?.[train] || {};
+        const groups = exercises[train];
+        els.exerciseList.innerHTML = Object.entries(groups).map(([group, list]) => `
+          <div class="exercise-group">
+            <strong>${group}</strong>
+            ${list.map((item, index) => {
+              const key = `${group}_${index}`;
+              const active = done[key];
+              return `<div class="exercise-item ${active ? "done" : ""}" data-ex="${key}">
+                <span class="check">${active ? "✓" : ""}</span>
+                <span>${item[0]}</span>
+                <em>${item[1]}</em>
+              </div>`;
+            }).join("")}
+          </div>
+        `).join("");
+        document.querySelectorAll("[data-ex]").forEach(row => {
+          row.addEventListener("click", () => toggleExercise(train, row.dataset.ex));
+        });
+        renderTaskSummary();
+      }
+
+      function toggleExercise(train, key) {
+        const saved = storage.get("my_ex", {});
+        saved[keyDate()] ||= {};
+        saved[keyDate()][train] ||= {};
+        saved[keyDate()][train][key] = !saved[keyDate()][train][key];
+        storage.set("my_ex", saved);
+        setTrain(train);
+      }
+
+      function renderTaskSummary() {
+        const saved = storage.get("my_ex", {});
+        const byDate = saved[keyDate()] || {};
+        const completed = [];
+
+        Object.entries(byDate).forEach(([train, doneMap]) => {
+          const groups = exercises[train];
+          if (!groups) return;
+          Object.entries(groups).forEach(([group, list]) => {
+            list.forEach((item, index) => {
+              const key = `${group}_${index}`;
+              if (doneMap[key]) {
+                completed.push({
+                  train,
+                  group,
+                  name: item[0],
+                  focus: item[1]
+                });
+              }
+            });
+          });
+        });
+
+        if (!completed.length) {
+          els.taskSummary.innerHTML = `
+            <div class="task-empty">今天还没有勾选训练动作。训练日里点选动作后，这里会自动汇总。</div>
+          `;
+          return;
+        }
+
+        const trainNames = { push: "推", pull: "拉", legs: "腿", shoulder: "肩", arms: "手臂", abs: "腹肌" };
+        els.taskSummary.innerHTML = `
+          <div class="task-meta">已完成 ${completed.length} 个动作</div>
+          <div class="task-chip-wrap">
+            ${completed.map(item => `<span class="task-chip">${trainNames[item.train] || item.train} · ${item.name}</span>`).join("")}
+          </div>
+        `;
+      }
+
+      function saveDiet(event) {
+        event.preventDefault();
+        const logs = storage.get("my_lg", []);
+        const date = keyDate();
+        const next = {
+          date,
+          c: Number(document.getElementById("dietCarb").value) || 0,
+          p: Number(document.getElementById("dietProtein").value) || 0,
+          f: Number(document.getElementById("dietFat").value) || 0,
+          w: Number(document.getElementById("dietWeight").value) || 0
+        };
+        const index = logs.findIndex(log => log.date === date);
+        if (index >= 0) logs[index] = next;
+        else logs.push(next);
+        storage.set("my_lg", logs);
+        showDietStatus(next);
+        drawWeightChart();
+      }
+
+      function loadDiet() {
+        const log = storage.get("my_lg", []).find(item => item.date === keyDate());
+        document.getElementById("dietCarb").value = log?.c || "";
+        document.getElementById("dietProtein").value = log?.p || "";
+        document.getElementById("dietFat").value = log?.f || "";
+        document.getElementById("dietWeight").value = log?.w || "";
+        showDietStatus(log);
+      }
+
+      function showDietStatus(log) {
+        if (!log) {
+          els.dietStatus.textContent = "当天还没有记录。";
+          document.getElementById("dietSuggestion").innerHTML = "";
+          return;
+        }
+        const total = log.c * 4 + log.p * 4 + log.f * 9;
+        els.dietStatus.textContent = `已记录：碳水 ${log.c}g，蛋白 ${log.p}g，脂肪 ${log.f}g，总热量 ${total} kcal${log.w ? `，体重 ${log.w}kg` : ""}。`;
+        suggestFood(log);
+      }
+
+      
+
+      function showAlcoholAdvice(event) {
+        event.preventDefault();
+        const type = document.getElementById("alcoholType").value;
+        const amount = document.getElementById("alcoholAmount").value;
+        const food = document.getElementById("alcoholFood").value.trim();
+        const typeText = {
+          baijiu: "蒸馏酒碳水较低，但酒精负担高",
+          beer: "啤酒含碳水，通常每瓶约 10-15g",
+          wine: "干红/干白碳水较低，但仍会影响恢复",
+          cocktail: "鸡尾酒和甜酒糖分较高，容易超热量",
+          mix: "混着喝更容易不适，第二天训练表现通常会下降"
+        }[type];
+        const amountText = {
+          light: "少量：补水 500ml，第二天可正常低到中强度训练",
+          medium: "中等：补水 800ml，补一点钠钾，第二天避免冲大重量",
+          heavy: "大量：补水 1L + 电解质，第二天建议休息或轻活动",
+          tooMuch: "喝多了：优先睡眠和补水，第二天不要硬练"
+        }[amount];
+        let extra = "";
+        if (food.includes("烧烤") || food.includes("烤")) extra = " 配餐偏高油高钠，第二天饮食清淡一些。";
+        if (food.includes("火锅")) extra = " 火锅通常油盐较高，第二天注意补水和蔬菜。";
+        document.getElementById("alcoholAdvice").textContent = `${typeText}。${amountText}。${food ? `配餐：${food}。` : ""}${extra}`;
+      }
+
+      function drawWeightChart() {
+        const canvas = els.weightChart;
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        const logs = storage.get("my_lg", [])
+          .filter(log => Number(log.w) > 0)
+          .sort((a, b) => a.date.localeCompare(b.date));
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+        if (logs.length < 2) {
+          ctx.fillStyle = "#6a7d76";
+          ctx.font = "14px Microsoft YaHei";
+          ctx.textAlign = "center";
+          ctx.fillText("需要至少 2 条体重记录", w / 2, h / 2);
+          return;
+        }
+
+        const pad = 42;
+        const chartW = w - pad * 2;
+        const chartH = h - pad * 2;
+        const weights = logs.map(log => Number(log.w));
+        const min = Math.min(...weights) - 1;
+        const max = Math.max(...weights) + 1;
+        const range = max - min || 1;
+
+        ctx.strokeStyle = "#e8ecea";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+          const y = pad + chartH * (1 - i / 4);
+          ctx.beginPath();
+          ctx.moveTo(pad, y);
+          ctx.lineTo(w - pad, y);
+          ctx.stroke();
+          ctx.fillStyle = "#6a7d76";
+          ctx.textAlign = "right";
+          ctx.font = "11px Microsoft YaHei";
+          ctx.fillText((min + range * i / 4).toFixed(1), pad - 6, y + 4);
+        }
+
+        const step = chartW / (logs.length - 1);
+        ctx.strokeStyle = "#256b5c";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        logs.forEach((log, index) => {
+          const x = pad + step * index;
+          const y = pad + chartH * (1 - (log.w - min) / range);
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        logs.forEach((log, index) => {
+          const x = pad + step * index;
+          const y = pad + chartH * (1 - (log.w - min) / range);
+          ctx.fillStyle = "#256b5c";
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#1a2b26";
+          ctx.font = "bold 11px Microsoft YaHei";
+          ctx.textAlign = "center";
+          ctx.fillText(`${Number(log.w).toFixed(1)}kg`, x, y - 10);
+          ctx.fillStyle = "#6a7d76";
+          ctx.font = "10px Microsoft YaHei";
+          ctx.fillText(log.date.slice(4, 6) + "/" + log.date.slice(6), x, h - 16);
+        });
+      }
+
+      init();
+          function suggestFood(log) {
+        const target = targets[currentDay] || targets.train;
+        if (!target) return;
+        const gap = { c: target.c - log.c, p: target.p - log.p, f: target.f - log.f };
+        const el = document.getElementById("dietSuggestion");
+        if (!el) return;
+        const foods = {
+          p: [
+            { name: "鸡胸肉", per: 24, unit: "100g" },
+            { name: "鸡蛋", per: 7, unit: "个" },
+            { name: "虾仁", per: 20, unit: "100g" },
+            { name: "牛肉", per: 24, unit: "100g" },
+            { name: "蛋白粉", per: 25, unit: "勺" },
+            { name: "鱼肉", per: 20, unit: "100g" }
+          ],
+          c: [
+            { name: "米饭", per: 77, unit: "100g生米" },
+            { name: "红薯", per: 22, unit: "100g" },
+            { name: "燕麦", per: 66, unit: "100g" },
+            { name: "香蕉", per: 25, unit: "根" },
+            { name: "全麦面包", per: 45, unit: "100g" }
+          ],
+          f: [
+            { name: "混合坚果", per: 10, unit: "20g" },
+            { name: "牛油果", per: 15, unit: "半个" },
+            { name: "橄榄油", per: 10, unit: "10g" },
+            { name: "花生酱", per: 8, unit: "10g" }
+          ]
+        };
+        const labels = { c: "碳水", p: "蛋白", f: "脂肪" };
+        let html = "";
+        const needs = [];
+        ["c", "p", "f"].forEach(key => {
+          const deficit = gap[key];
+          if (deficit <= 5) return;
+          const list = foods[key];
+          const best = list[0];
+          const amount = Math.ceil(deficit / best.per * (key === "f" ? 20 : 100) / 5) * 5;
+          needs.push({ key, deficit, best, amount });
+        });
+        if (needs.length === 0) {
+          html = "<span style=color:#6a7d76;font-size:12px>目标已接近，继续保持</span>";
+        } else {
+          html = "<div style=font-weight:700;color:#256b5c;margin-bottom:4px>建议补充：</div>";
+          needs.forEach(n => {
+            html += "<div style=padding:2px 0;font-size:13px>● " + labels[n.key] + " 少了 " + n.deficit + "g → 再吃 " + n.amount + "" + n.best.unit + " " + n.best.name + "</div>";
+          });
+        }
+        el.innerHTML = html;
+      }
+</script>
+  </body>
+</html>
