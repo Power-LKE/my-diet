@@ -481,6 +481,11 @@
         <h2>体重趋势</h2>
         <canvas id="weightChart" width="680" height="240"></canvas>
       </section>
+
+      <section class="panel">
+        <h2>体重趋势分析</h2>
+        <div id="trendAnalysis" class="status">需要至少 3 天的体重记录才能分析趋势。</div>
+      </section>
     </main>
 
     <script>
@@ -691,6 +696,7 @@
         setDay(dayTypes[keyDate()] || "train", false);
         loadDiet();
         renderTaskSummary();
+        analyzeWeightTrend();
         drawWeightChart();
         els.dateLabel.textContent = els.datePicker.value === todayValue() ? "今天" : els.datePicker.value;
       }
@@ -819,6 +825,7 @@
         else logs.push(next);
         storage.set("my_lg", logs);
         showDietStatus(next);
+        analyzeWeightTrend();
         drawWeightChart();
       }
 
@@ -937,6 +944,79 @@
           ctx.font = "10px Microsoft YaHei";
           ctx.fillText(log.date.slice(4, 6) + "/" + log.date.slice(6), x, h - 16);
         });
+      }
+
+      // 分析近 7-10 天体重趋势，给出碳水调整建议
+      function analyzeWeightTrend() {
+        const logs = storage.get("my_lg", [])
+          .filter(log => Number(log.w) > 0)
+          .sort((a, b) => a.date.localeCompare(b.date));
+        const el = document.getElementById("trendAnalysis");
+        if (!el) return;
+
+        if (logs.length < 3) {
+          el.innerHTML = '<span style=color:#6a7d76;font-size:12px>需要至少 3 天的体重数据才能分析趋势。</span>';
+          return;
+        }
+
+        // Take last 7-10 days
+        const recent = logs.slice(-10);
+        const n = recent.length;
+        const days = recent.map((l, i) => i);
+        const weights = recent.map(l => Number(l.w));
+        const avgW = weights.reduce((a, b) => a + b, 0) / n;
+
+        // Linear regression: slope = (n*sum(xy) - sum(x)*sum(y)) / (n*sum(xx) - sum(x)^2)
+        const sumX = days.reduce((a, b) => a + b, 0);
+        const sumY = weights.reduce((a, b) => a + b, 0);
+        const sumXY = days.reduce((a, i) => a + i * weights[i], 0);
+        const sumXX = days.reduce((a, i) => a + i * i, 0);
+        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+
+        const weeklyKg = slope * 7;
+        const weeklyPct = (weeklyKg / avgW) * 100;
+
+        // Read current carb target for training day
+        const user = storage.get("my_user");
+        const currentTarget = user ? calcDayTargets(user, "train") : null;
+        const currentCarbs = currentTarget ? currentTarget.c : 0;
+
+        let recommendation = "";
+        let level = "good";
+
+        if (weeklyPct > 1.0) {
+          // Weight drops too fast
+          const increaseBy = Math.round(currentCarbs * 0.12);
+          const newCarbs = currentCarbs + increaseBy;
+          recommendation = `${weeklyPct.toFixed(1)}%/周 · 下降过快
+建议：每天增加碳水约 ${increaseBy}g（训练日≈${newCarbs}g），减少有氧或增加摄入均可。`;
+          level = "fast";
+        } else if (weeklyPct < 0.2 || weeklyKg > 0) {
+          // Weight drops too slow or gaining
+          const decreaseBy = Math.round(currentCarbs * 0.12);
+          const newCarbs = Math.max(currentCarbs - decreaseBy, 100);
+          recommendation = `${weeklyPct.toFixed(1)}%/周 · 下降过慢
+建议：每天减少碳水约 ${currentCarbs - newCarbs}g（训练日≈${newCarbs}g），可适当增加有氧。`;
+          level = "slow";
+        } else {
+          recommendation = `${weeklyPct.toFixed(1)}%/周 · 速度良好
+建议：保持当前的饮食方案，继续观察。`;
+          level = "good";
+        }
+
+        const color = level === "fast" ? "#c16b4f" : level === "slow" ? "#b8942e" : "#256b5c";
+        const bg = level === "fast" ? "#fdf0e6" : level === "slow" ? "#faf6e8" : "#e4f0eb";
+        const trend = weeklyKg > 0 ? "↑" : "↓";
+
+        el.innerHTML = `<div style="padding:8px 0;font-size:13px;line-height:1.8">
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px">
+            <span style="font-weight:700;font-size:15px;color:${color}">${Math.abs(weeklyKg).toFixed(2)}kg/天 ${trend}</span>
+            <span style="color:#6a7d76;font-size:12px">最近 ${n} 天 · 平均 ${avgW.toFixed(1)}kg</span>
+          </div>
+          <div style="padding:10px 12px;border-radius:8px;background:${bg};border:1px solid ${color}20">
+            <div style="font-weight:700;color:${color};margin-bottom:3px">${recommendation.replace("\n", "<br>")}</div>
+          </div>
+        </div>`;
       }
 
       init();
