@@ -470,7 +470,6 @@
         <div id="motivationBody" style="padding:8px 0 14px;line-height:2"></div>
         <div style="display:flex;gap:10px">
           <button class="primary" id="motivationConfirm" type="button" style="flex:1">知道了</button>
-          <button class="ghost" id="motivationCancel" type="button" style="flex:1">跳过</button>
         </div>
       </div>
     </div>
@@ -734,10 +733,6 @@
         document.getElementById("motivationConfirm").addEventListener("click", () => {
           document.getElementById("motivationOverlay").classList.remove("show");
           commitDietSave();
-        });
-        document.getElementById("motivationCancel").addEventListener("click", () => {
-          document.getElementById("motivationOverlay").classList.remove("show");
-          pendingDietSave = null;
         });
 
         loadDateState();
