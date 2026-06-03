@@ -729,13 +729,11 @@
         els.datePicker.value = todayValue();
         els.todayBtn.addEventListener("click", () => {
           els.datePicker.value = todayValue();
-          
+        loadDateState();
+        });
         document.getElementById("motivationConfirm").addEventListener("click", () => {
           document.getElementById("motivationOverlay").classList.remove("show");
           commitDietSave();
-        });
-
-        loadDateState();
         });
         els.datePicker.addEventListener("change", loadDateState);
         els.setupBtn.addEventListener("click", showSetup);
